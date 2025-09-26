@@ -31,8 +31,7 @@ const upload = multer({ storage });
 
 app.use(cors({
     origin: ['http://localhost:3000', "https://sellandiammn-traders.vercel.app",
-
-    ],
+        "sellandiammn-traders.vercel.app" ],
     credentials: true
 }));
 
