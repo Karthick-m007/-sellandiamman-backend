@@ -5,8 +5,6 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const nodemailer = require('nodemailer');
-const { Resend } = require('resend');
-const resend = new Resend(process.env.RESEND_API_KEY); // put your key in .env
 
 
 const app = express();
@@ -47,40 +45,38 @@ app.post('/quote', upload.single('image'), async (req, res) => {
             return res.status(400).json({ success: false, message: "All fields are required" });
         }
 
-        const emailHtml = `
-            <h2>New Quote Request</h2>
-            <p><strong>Name:</strong> ${name}</p>
-            <p><strong>Email:</strong> ${email}</p>
-            <p><strong>Mobile Number:</strong> ${mobilenumber}</p>
-            <p><strong>Message:</strong><br>${message}</p>
-        `;
+        const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+                user: "madhanbgmi8@gmail.com",
+                pass: "ytdt jzsl nwpt xgjd", // Use your Gmail App Password
+            },
+        });
 
-        let attachments = [];
+        let mailOptions = {
+            from: `"${name}" <${email}>`,
+            to: "madhanbgmi8@gmail.com", // Replace with admin email
+            subject: "New Quote Request",
+            text: `Name: ${name}\nEmail: ${email}\nmobilenumber: ${mobilenumber}\nMessage: ${message}`,
+            attachments: [],
+        };
+
+        // ✅ Add attachment if image is present
         if (image) {
-            const base64 = fs.readFileSync(image.path, { encoding: 'base64' });
-            attachments.push({
+            mailOptions.attachments.push({
                 filename: image.originalname,
-                content: base64,
+                path: image.path, // since we're using diskStorage
             });
         }
 
-        const emailResponse = await resend.emails.send({
-            from: 'Sellandiamman Traders <onboarding@resend.dev>', // or your domain if verified
-            to: 'madhanbgmi8@gmail.com',
-            subject: 'New Quote Request',
-            html: emailHtml,
-            attachments
-        });
+        await transporter.sendMail(mailOptions);
 
-        console.log("Email sent:", emailResponse);
         res.status(200).json({ success: true, message: "Quote sent successfully" });
-
     } catch (error) {
         console.error("Error sending email:", error);
         res.status(500).json({ success: false, message: "Failed to send email" });
     }
 });
-
 
 // ✅ Start server
 const PORT = process.env.PORT || 5000;
